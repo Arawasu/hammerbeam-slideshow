@@ -84,7 +84,39 @@
      bool connected;
  };
  
- /* … existing draw_top(), battery‑/connection‑update callbacks stay intact … */
+/* ───── Slideshow helpers (random order, no repeats) ───── */
+
+static lv_obj_t *art_box;                 /* container for the Hammerbeam frame  */
+static uint8_t  order[ARRAY_SIZE(anim_imgs)];
+static uint8_t  order_pos;
+
+static void shuffle_order(void)
+{
+    for (uint8_t i = 0; i < ARRAY_SIZE(order); i++) {
+        order[i] = i;
+    }
+    for (int i = ARRAY_SIZE(order) - 1; i > 0; --i) {
+        uint32_t j = sys_rand32_get() % (i + 1);
+        uint8_t tmp = order[i];
+        order[i]   = order[j];
+        order[j]   = tmp;
+    }
+    order_pos = 0;
+}
+
+static void slideshow_cb(lv_timer_t *t)
+{
+    if (order_pos >= ARRAY_SIZE(order)) {
+        shuffle_order();
+    }
+
+    /* clear only the art container, preserve status bar */
+    lv_obj_clean(art_box);
+
+    lv_obj_t *img = lv_img_create(art_box);
+    lv_img_set_src(img, anim_imgs[order[order_pos++]]);
+    lv_obj_align(img, LV_ALIGN_TOP_LEFT, 0, 0);
+}
  
  /* ───────────────────────────────  Art‑slideshow helpers  ─────────────────────────────── */
  
@@ -126,29 +158,35 @@
  }
  
  /* ───────────────────────────────  Widget initialisation  ─────────────────────────────── */
- 
  int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent)
  {
-     /* ‣ Root container ‣────────────────────────────────────────────────────────────── */
+     /* ── Root container ───────────────────────────────────────────── */
      widget->obj = lv_obj_create(parent);
      lv_obj_set_size(widget->obj, 160, 68);
  
-     /* ‣ Status bar canvas (battery + Wi‑Fi) – unchanged ‣──────────────────────────── */
+     /* ── Status bar canvas (battery + Wi‑Fi) ──────────────────────── */
      lv_obj_t *top = lv_canvas_create(widget->obj);
      lv_obj_align(top, LV_ALIGN_TOP_RIGHT, 0, 0);
-     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
+     lv_canvas_set_buffer(top,
+                          widget->cbuf,
+                          CANVAS_SIZE,
+                          CANVAS_SIZE,
+                          LV_IMG_CF_TRUE_COLOR);
  
-     /* ‣ ART AREA – instead of lv_animimg we use our own timer‑driven slideshow ‣────── */
+     /* ── Hammerbeam slideshow area (replaces lv_animimg) ─────────── */
      art_box = lv_obj_create(widget->obj);
      lv_obj_clear_flag(art_box, LV_OBJ_FLAG_SCROLLABLE);
-     lv_obj_set_size(art_box, 140, 68);           /* same as your art dimensions          */
+     lv_obj_set_size(art_box, 140, 68);          /* art dimensions */
      lv_obj_align(art_box, LV_ALIGN_TOP_LEFT, 0, 0);
  
-     shuffle_order();                             /* initialise first random cycle        */
-     rotate_art_cb(NULL);                         /* draw first image immediately         */
-     lv_timer_create(rotate_art_cb, ART_ROTATE_INTERVAL, NULL);
+     /* First shuffle + first frame */
+     shuffle_order();
+     slideshow_cb(NULL);                         /* draw immediately */
+     lv_timer_create(slideshow_cb,
+                     CONFIG_CUSTOM_ANIMATION_SPEED,   /* your 5‑min value */
+                     NULL);
  
-     /* ‣ Hook into ZMK battery / connection events – original code intact ‣─────────── */
+     /* ── keep existing battery / connection listeners ───────────── */
      sys_slist_append(&widgets, &widget->node);
      widget_battery_status_init();
      widget_peripheral_status_init();
