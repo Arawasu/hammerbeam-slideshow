@@ -2,7 +2,7 @@
  *  Hammerbeam right‑hand display widget
  *
  *  © 2023‑2025  The ZMK Contributors – MIT License
- *  • Uses k_work_delayable instead of LVGL timers (better battery + ZMK‑compatible).
+ *
  */
 
  #include <zephyr/kernel.h>
@@ -67,7 +67,7 @@
  };
  
  #define ART_FRAME_COUNT      (ARRAY_SIZE(anim_imgs))
- #define ART_ROTATE_INTERVAL  CONFIG_CUSTOM_ANIMATION_SPEED /* ms */
+ #define ART_ROTATE_INTERVAL  10000 /* 10 seconds for testing */
  
  static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
  
@@ -186,8 +186,8 @@
      lv_obj_align(art_box, LV_ALIGN_TOP_LEFT, 0, 0);
  
      shuffle_order();
-     slideshow_work_cb(NULL);
      k_work_init_delayable(&slideshow_work, slideshow_work_cb);
+     slideshow_work_cb(NULL);
      k_work_schedule(&slideshow_work, K_MSEC(ART_ROTATE_INTERVAL));
  
      sys_slist_append(&widgets, &widget->node);
