@@ -3,6 +3,13 @@
  *
  *  © 2023‑2025  The ZMK Contributors – MIT License
  *
+ *  Re‑worked by Arawasu (Apr 2025)
+ *
+ *  Key changes
+ *  ───────────
+ *  • Uses k_work_delayable instead of LVGL timers (better battery + ZMK‑compatible).
+ *  • Randomized slideshow logic remains identical.
+ *  • Preserves Wi‑Fi and battery info widgets.
  */
 
  #include <zephyr/kernel.h>
@@ -67,7 +74,7 @@
  };
  
  #define ART_FRAME_COUNT      (ARRAY_SIZE(anim_imgs))
- #define ART_ROTATE_INTERVAL  10000 /* 10 seconds for testing */
+ #define ART_ROTATE_INTERVAL  600000 /* 10 minutes */
  
  static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
  
