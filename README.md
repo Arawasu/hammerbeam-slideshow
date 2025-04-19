@@ -39,7 +39,7 @@ manifest:
     path: config
 ```
 
-Now simply swap out the default nice_view shield on the board for the custom one in your build.yaml file.
+Now simply swap out the default nice_view shield on the board for the custom one in your build.yaml file."
 
 ```yml
 ---
@@ -48,5 +48,4 @@ include:
     shield: urchin_left nice_view_adapter  nice_view
   - board: nice_nano_v2
     shield: urchin_right nice_view_adapter nice_view_custom #custom shield
-```
 ```
