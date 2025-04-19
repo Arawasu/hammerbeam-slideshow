@@ -1,15 +1,12 @@
 /*
  *  Hammerbeam right‑hand display widget
- *
  *  © 2023‑2025  The ZMK Contributors – MIT License
+ *  Reworked by Arawasu
  *
- *  Re‑worked by Arawasu (Apr 2025)
- *
- *  Key changes
+ *  Key features
  *  ───────────
  *  • Uses k_work_delayable instead of LVGL timers (better battery + ZMK‑compatible).
- *  • Randomized slideshow logic remains identical.
- *  • Preserves Wi‑Fi and battery info widgets.
+ *  • Randomized slideshow logic (Fisher-Yates, no repeats until full cycle).
  */
 
  #include <zephyr/kernel.h>
@@ -32,6 +29,8 @@
  #include <zmk/ble.h>
  
  #include "peripheral_status.h"
+ 
+ /* ───── Art assets ──────────────────────────────────────────────────────────────── */
  
  LV_IMG_DECLARE(hammerbeam1);
  LV_IMG_DECLARE(hammerbeam2);
@@ -76,16 +75,19 @@
  #define ART_FRAME_COUNT      (ARRAY_SIZE(anim_imgs))
  #define ART_ROTATE_INTERVAL  600000 /* 10 minutes */
  
+ /* ───── ZMK widget bookkeeping ───────────────────────────────────────────────────── */
+ 
  static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
  
  struct peripheral_status_state {
      bool connected;
  };
  
+ /* ───── Slideshow logic (random order + delayed Zephyr workqueue) ──────────────── */
+ 
  static lv_obj_t *art_box;
  static uint8_t order[ART_FRAME_COUNT];
  static uint8_t order_pos;
- 
  static struct k_work_delayable slideshow_work;
  
  static void shuffle_order(void) {
@@ -114,6 +116,8 @@
      k_work_schedule(&slideshow_work, K_MSEC(ART_ROTATE_INTERVAL));
  }
  
+ /* ───── Status bar (battery and Wi-Fi icons) ────────────────────────────────────── */
+ 
  static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_state *state) {
      lv_obj_t *canvas = lv_obj_get_child(widget, 0);
      lv_draw_label_dsc_t label_dsc;
@@ -127,6 +131,8 @@
                          state->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
      rotate_canvas(canvas, cbuf);
  }
+ 
+ /* ───── Battery state handling ───────────────────────────────────────────────────── */
  
  static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
  #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
@@ -159,6 +165,8 @@
  ZMK_SUBSCRIPTION(widget_battery_status, zmk_usb_conn_state_changed);
  #endif
  
+ /* ───── Peripheral connection (BT) widget ────────────────────────────────────────── */
+ 
  static struct peripheral_status_state get_state(const zmk_event_t *_eh) {
      return (struct peripheral_status_state){.connected = zmk_split_bt_peripheral_is_connected()};
  }
@@ -178,6 +186,8 @@
  ZMK_DISPLAY_WIDGET_LISTENER(widget_peripheral_status, struct peripheral_status_state,
                              output_status_update_cb, get_state)
  ZMK_SUBSCRIPTION(widget_peripheral_status, zmk_split_peripheral_status_changed);
+ 
+ /* ───── Widget creation and entry point ──────────────────────────────────────────── */
  
  int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
      widget->obj = lv_obj_create(parent);
