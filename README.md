@@ -1,5 +1,10 @@
 # Hammerbeam Slideshow
-This is a zmk module to implement a slideshow of 30 of Hammerbeam's 1 bit art on the peripheral (right) nice!view display.
+## NOTE ABOUT FORK
+This fork replaces the original lv_animimg-based art rotation with a battery-safe k_work_delayable system using the Zephyr workqueue.
+The original animation widget caused memory corruption or stopped working with long intervals (≥5 min), likely due to LVGL timer issues on e-paper displays. Additionally, the slideshow is now randomized (Fisher-Yates) with no repeats until a full cycle has been displayed. The delay is configurable slideshow delay via ART_ROTATE_INTERVAL (default = 10 minutes), which can be refactored to use the original var that allows you to set the interval (`CONFIG_CUSTOM_ANIMATION_SPEED`). I just prefer it this way 8). The "patch" lives in peripheral_status.c.
+
+## Original README from GPEYE
+"This is a zmk module to implement a slideshow of 30 of Hammerbeam's 1 bit art on the peripheral (right) nice!view display.
 
 Hammerbeam, _the original artist of the iconic balloon and mountain art found in the default zmk firmware for the nice!view screen_, has more fantastic 1 bit art that you may not have seen.
 
@@ -44,15 +49,4 @@ include:
   - board: nice_nano_v2
     shield: urchin_right nice_view_adapter nice_view_custom #custom shield
 ```
-
-by default the this urchin animation will run for a duration of 300 seconds, 10 seconds per picture, fairly slow to save battery
-
-If you want to change the speed of the animation, you can edit the speed by changing the CONFIG_CUSTOM_ANIMATION_SPEED in your .conf file
-
-For example:
-
-```conf
-# urchin.conf
-CONFIG_CUSTOM_ANIMATION_SPEED=300000 # 300 second total duration
-# 30 pictures, so 10 seconds per picture
 ```
