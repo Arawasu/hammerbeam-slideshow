@@ -3,7 +3,7 @@
 This fork replaces the original lv_animimg-based art rotation with a battery-safe k_work_delayable system using the Zephyr workqueue.
 The original animation widget caused memory corruption or stopped working with long intervals (≥5 min), likely due to LVGL timer issues on e-paper displays. Additionally, the slideshow is now randomized (Fisher-Yates) with no repeats until a full cycle has been displayed. The delay is configurable slideshow delay via ART_ROTATE_INTERVAL (default = 10 minutes), which can be refactored to use the original var that allows you to set the interval (`CONFIG_CUSTOM_ANIMATION_SPEED`). I just prefer it this way 8). The "patch" lives in peripheral_status.c.
 
-## Original README from GPEYE
+## Original README from GPEye
 "This is a zmk module to implement a slideshow of 30 of Hammerbeam's 1 bit art on the peripheral (right) nice!view display.
 
 Hammerbeam, _the original artist of the iconic balloon and mountain art found in the default zmk firmware for the nice!view screen_, has more fantastic 1 bit art that you may not have seen.
